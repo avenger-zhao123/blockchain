@@ -24,6 +24,7 @@ type BlockHeader struct {
 	bits int              //难度系数
 	nonce int             //随机计数器，挖矿相关
 }
+
 //设置当前区块hash值
 func (b*Block)SetHashCurr() *Block{ //b*Block是方法，SetHashCurr是函数名，*Block是返回值
 	//生成头信息的拼接字符串

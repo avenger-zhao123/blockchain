@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	 "fmt"
+	"log"
 )
 
 type Block struct {
@@ -23,7 +24,11 @@ func main()  {
 	  //编码器将来将编码的结果写入缓存中
 	enc :=gob.NewEncoder(&encodercontainer)
 	  //编码数据，编码的结果写入编码器的缓存中
-	enc.Encode(b)
+	 err :=enc.Encode(b)
+	 if err!=nil{
+	 	log.Fatal(err)
+
+	}
 	fmt.Println(encodercontainer.Bytes())
 	//将编码的数据定义为一个变量，以便解码
 	a :=encodercontainer.Bytes()
@@ -42,7 +47,11 @@ func main()  {
 	//解码时需要提供解码的数据类型
 	c :=Block{}
 	//解码数据
-	dec.Decode(&c)
+	err =dec.Decode(&c)
+	if err !=nil {
+		log.Fatal(err)
+	}
+
 	fmt.Println(c)
 
 

@@ -2,19 +2,31 @@ package baockchain
 
 import (
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb"
+	"log"
 	"time"
 )
 
 //建立区块链类型结构体
 type BlockChain struct {
 	lastHash Hash           //最后一个区块的哈希
-	blocks map[Hash]*Block  //全部区块信息，由区块哈希作为key来检索
+	//了解leveldb数据库之后，更新内容
+	db *leveldb.DB   //leveldb的数据库连接
+	//blocks map[Hash]*Block  //全部区块信息，由区块哈希作为key来检索
 }
 //建立区块链
-func NewBlockchain()*BlockChain {
+  //了解leveldb数据库之后，更新内容:给NewBlockchain传递”db leveldb.DB“的参数
+func NewBlockchain(db *leveldb.DB)*BlockChain {
 	//实例化区块，指在面向对象的编程中，通常把用类创建对象的过程称为实例化
 	bc := &BlockChain{
-		blocks : map[Hash]*Block{},  //全部区块信息，由区块哈希作为key来检索
+		//blocks : map[Hash]*Block{},  //全部区块信息，由区块哈希作为key来检索
+		//了解leveldb数据库之后，更新内容
+		db: db,
+
+	}
+	data,err :=bc.db.Get([]byte("lastHash"),nil)
+	if err !=nil{
+		bc.lastHash=Hash(data)
 	}
 	return bc
 }
@@ -24,7 +36,19 @@ func (bc *BlockChain) AddBlock(txs string) *BlockChain {
 	//构建区块
 	b :=NewBlock(bc.lastHash,txs)
 	//将区块加入到链的存储结构中
-	bc.blocks[b.hashCurr] =b
+	//bc.blocks[b.hashCurr] =b
+	//了解leveldb数据库之后，更新内容:将区块加入到链的存储结构中
+	if z,err :=BlockSerialize(*b); err !=nil {    //建立一个BlockSerialize函数，作用是将Block中的数据转化成byte切片型数据并判断是否有错
+        //设置（建立）一个key，key是区块的哈希值，值是上面的byte切片数据
+		///key为b_哈希值,加上"b_"是为了标识，通常会在区块hash的key上，增加前缀。
+		log.Fatal("block can not be serialized.")
+	}else if err= bc.db.Put([]byte("b_"+ b.hashCurr), z, nil);err !=
+		nil{
+		//出错则返回一段话
+		log.Fatal("block can not be saved")
+
+	}
+	//没有更新的内容：
 	//将最后的区块哈希设置为当前区块
 	bc.lastHash =b.hashCurr
 	return bc
@@ -40,12 +64,35 @@ func (bc *BlockChain)AddGensisBlock() *BlockChain  {
 	}
 	return bc.AddBlock("Founding block")
 }
+//通过Hash获取区块
+func (bc *BlockChain)GetBlock(hash Hash)(*Block,error) {
+	//从数据库中读取对应的区块
+	data,err := bc.db.Get([]byte("b_" + hash),nil)  //key为b_哈希,加上"b_"是为了标识，通常会在区块hash的key上，增加前缀。
+	if err !=nil {
+		return nil, err
+	}
+	//反序列化（从数据库读出来是序列化-对应的数据（对象的状态信息）转化成字符串（可以存储或传输的形式），展示是要反序列化的-与序列化相反）
+	b,err :=BlockUnSerialize(data) //在serialize中创建BlockUnSerialize函数，以便调用
+	if err !=nil {
+		return nil, err
+	}
+	//函数的返回值是引用型
+	return &b,nil
+}
+
+
+
 //迭代展示区块的方法 （方便之后的测试）
 func (bc *BlockChain) Iterate() {
 	//通过for循环遍历出当前区块
 	for hash :=bc.lastHash;hash !=""; {
 		//b作为blocks的下标
-		b :=bc.blocks[hash]
+		//b :=bc.blocks[hash]
+		//得到区块  GetBlock是上面的函数，这块调用
+		b,err :=bc.GetBlock(hash)
+		if err!=nil {
+			log.Fatal(err)
+		}
 		//打印区块的Hash值
 		fmt.Println("HashCurr:", b.hashCurr)
 		//打印区块的交易列表
