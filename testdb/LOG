@@ -1,0 +1,26 @@
+=============== Jun 11, 2020 (CST) ===============
+12:00:36.398964 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+12:00:36.686194 db@open opening
+12:00:36.689187 version@stat F·[] S·0B[] Sc·[]
+12:00:36.721134 db@janitor F·2 G·0
+12:00:36.721134 db@open done T·34.9391ms
+=============== Jun 11, 2020 (CST) ===============
+14:49:11.485202 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+14:49:11.742511 version@stat F·[] S·0B[] Sc·[]
+14:49:11.742511 db@open opening
+14:49:11.742511 journal@recovery F·1
+14:49:11.744506 journal@recovery recovering @1
+14:49:11.862191 memdb@flush created L0@2 N·1 S·140B "ave..hao,v1":"ave..hao,v1"
+14:49:11.868219 version@stat F·[1] S·140B[140B] Sc·[0.25]
+14:49:12.014782 db@janitor F·3 G·0
+14:49:12.014782 db@open done T·272.2712ms
+=============== Jun 11, 2020 (CST) ===============
+15:11:43.017665 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+15:11:43.236045 version@stat F·[1] S·140B[140B] Sc·[0.25]
+15:11:43.236045 db@open opening
+15:11:43.237043 journal@recovery F·1
+15:11:43.238047 journal@recovery recovering @3
+15:11:43.268965 memdb@flush created L0@5 N·1 S·140B "ave..hao,v3":"ave..hao,v3"
+15:11:43.270953 version@stat F·[2] S·280B[280B] Sc·[0.50]
+15:11:43.376845 db@janitor F·4 G·0
+15:11:43.376845 db@open done T·140.7998ms
