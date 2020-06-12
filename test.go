@@ -19,9 +19,9 @@ func main(){
 	//释放数据库连接
 	defer db.Close()
 
-
+    //区块链测试
 	a :=baockchain.NewBlockchain(db)
-	a.AddGensisBlock()
+	a.AddGensisBlock() // ->
 	a.AddBlock("First Block").AddBlock("Second Block")
 	//fmt.Println(a)
 	a.Iterate()
