@@ -1,4 +1,4 @@
-package baockchain
+package block
 
 import (
 	"bytes"
@@ -11,20 +11,20 @@ import (
 type BlockData struct {
 	//为何要在序列化中再建立一个结构体，而不是将区块和区块头里的字段开头大写？
 	//原因是若将区块和区块头里的字段开头大写，任何人都可以改字段，而在序列化里只能查看，不能改
-	Version int
-	HashPrevBlock Hash
+	Version        int
+	HashPrevBlock  Hash
 	HashMerkleRoot Hash
-	Time time.Time
-	Bits int
-	Nonce int
-	Txs string
-	TxCounter int
-	HashCurr Hash
+	Time           time.Time
+	Bits           int
+	Nonce          int
+	Txs            string
+	TxCounter      int
+	HashCurr       Hash
 }
 //区块序列化
 func BlockSerialize(b Block)([]byte,error) {
 	// 将区块数据赋值到 BlockData
-	e :=BlockData{
+	e := BlockData{
 		Version: b.header.version,
 		HashPrevBlock: b.header.hashPrevBlock,
 		HashMerkleRoot: b.header.hashMerkRoot,
@@ -59,7 +59,7 @@ func BlockUnSerialize(data []byte)(Block,error) {
 	//建立解码器
 	dec :=gob.NewDecoder(&unbuffer)
 	//解码时需要提供解码的数据类型
-	f :=BlockData{}
+	f := BlockData{}
 	//解码数据(反序列化）
 	err:=dec.Decode(&f)
 	if err  !=nil{

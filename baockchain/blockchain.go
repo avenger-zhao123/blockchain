@@ -1,6 +1,8 @@
 package baockchain
 
 import (
+	"blockchain/block"
+	"blockchain/pow"
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -10,7 +12,7 @@ import (
 
 //一.建立区块链类型结构体
 type BlockChain struct {
-	lastHash Hash           //最后一个区块的哈希
+	lastHash block.Hash //最后一个区块的哈希
 	//了解leveldb数据库之后，更新内容
 	db *leveldb.DB   //leveldb的数据库连接
 	//blocks map[Hash]*Block  //全部区块信息，由区块哈希作为key来检索
@@ -32,7 +34,7 @@ func NewBlockchain(db *leveldb.DB)*BlockChain {
 	//err为空是指数据库没有lastHash，也就是没有区块，则date赋值于bc.lastHash，若不为空，则直接返回bc
 	//若写成err !=nil，则是不执行这两段代码，直接返回bc
 	if err ==nil{
-		bc.lastHash=Hash(data)
+		bc.lastHash= block.Hash(data)
 	}
 	return bc
 }
@@ -52,18 +54,30 @@ func (bc *BlockChain)AddGensisBlock() *BlockChain  {
 //bc *BlockChain是方法，AddBlock是函数名， 提供区块的数据，目前是字符串，*BlockChain是返回值
 func (bc *BlockChain) AddBlock(txs string) *BlockChain {
 	//构建区块
-	b := NewBlock(bc.lastHash, txs)
+	b := block.NewBlock(bc.lastHash, txs)
+	//对区块做POW，工作证明
+	  //pow对象
+	p :=pow.NewPow(b)
+	  //开始证明
+	nonce,hash := p.Proof()
+	  //保险做个判断
+	if nonce ==0 || hash == "" {
+		log.Fatal("block Hashcash Proof Failed")
+	}
+	// 为区块设置nonce和has
+	b.SetNonce(nonce).SetHashCurr(hash) //集联调用
+
 	//将区块加入到链的存储结构中
 	//bc.blocks[b.hashCurr] =b
 	//了解leveldb数据库之后，更新内容:将区块加入到链的存储结构中
 	//更新的原因是：当得到区块链实例时，要考虑区块已经存在的情况。 意味着需要去确定最后的区块哈希值。
 	//确定最后的区块哈希值方法：是在添加区块时，将最后的区块哈希值储存到数据库中
-	if z, err := BlockSerialize(*b); err != nil { //建立一个BlockSerialize函数，作用是将Block中的数据转化成byte切片型数据并判断是否有错
+	if z, err := block.BlockSerialize(*b); err != nil { //建立一个BlockSerialize函数，作用是将Block中的数据转化成byte切片型数据并判断是否有错
 		log.Fatal("block can not be serialized.") //出错则返回一段话
 		//设置（建立）一个key，key是区块的哈希值，值是上面的byte切片数据
 		//key为b_哈希值,加上"b_"是为了标识，通常会在区块hash的key上，增加前缀。
 		//设置的时候要考虑是否有错
-	} else if err = bc.db.Put([]byte("b_"+b.hashCurr), z, nil);
+	} else if err = bc.db.Put([]byte("b_"+b.GetHashCurr()), z, nil);
 		err != nil {
 		//出错则返回一段话
 		log.Fatal("block can not be saved")
@@ -90,9 +104,9 @@ func (bc *BlockChain) AddBlock(txs string) *BlockChain {
 
 	//没有更新的内容：
 	//将最后的区块哈希设置为当前区块
-	bc.lastHash = b.hashCurr
+	bc.lastHash = b.GetHashCurr()
 	// 将最后的区块哈希存储到数据库中
-	err := bc.db.Put([]byte("lastHash"), []byte(b.hashCurr), nil)
+	err := bc.db.Put([]byte("lastHash"), []byte(b.GetHashCurr()), nil)
 	if err != nil {
 		log.Fatal("lastHas can not be saved")
 	}
@@ -101,14 +115,14 @@ func (bc *BlockChain) AddBlock(txs string) *BlockChain {
 }
 
 //五.通过Hash获取区块
-func (bc *BlockChain)GetBlock(hash Hash)(*Block,error) {
+func (bc *BlockChain)GetBlock(hash block.Hash)(*block.Block,error) {
 	//从数据库中读取对应的区块
 	data,err := bc.db.Get([]byte("b_" + hash),nil)  //key为b_哈希,加上"b_"是为了标识，通常会在区块hash的key上，增加前缀。
 	if err !=nil {
 		return nil, err
 	}
 	//反序列化（从数据库读出来是序列化-对应的数据（对象的状态信息）转化成字符串（可以存储或传输的形式），展示是要反序列化的-与序列化相反）
-	b,err :=BlockUnSerialize(data) //在serialize中创建BlockUnSerialize函数，以便调用
+	b,err := block.BlockUnSerialize(data) //在serialize中创建BlockUnSerialize函数，以便调用
 	if err !=nil {
 		return nil, err
 	}
@@ -131,17 +145,18 @@ func (bc *BlockChain) Iterate() {
 			return
 		}
 		//打印区块的Hash值
-		fmt.Println("HashCurr:", b.hashCurr)
+		fmt.Println("HashCurr:", b.GetHashCurr())
 		//打印区块的交易列表
-		fmt.Println("Txs", b.txs)
+		fmt.Println("Txs", b.GetTxs())
 		//打印节点生成时间
-		fmt.Println("Time", b.header.time.Format(time.UnixDate))
+		fmt.Println("Time", b.GetTime().Format(time.UnixDate))
 		//打印前一个节点的哈希值
-		fmt.Println("HashPrev",b.header.hashPrevBlock)
-		hash =b.header.hashPrevBlock
+		fmt.Println("HashPrev",b.GetHashPrevBlock())
+		hash =b.GetHashPrevBlock()
 
 	}
 }
+//清空命令
 func (bc *BlockChain)Clear() {
 	// 数据库中全部区块链的 key 全部删除
 	bc.db.Delete([]byte("lastHash"),nil)
