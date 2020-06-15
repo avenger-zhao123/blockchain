@@ -64,7 +64,7 @@ func (bc *BlockChain) AddBlock(txs string) *BlockChain {
 	if nonce ==0 || hash == "" {
 		log.Fatal("block Hashcash Proof Failed")
 	}
-	// 为区块设置nonce和has
+	// 为区块设置nonce和hash
 	b.SetNonce(nonce).SetHashCurr(hash) //集联调用
 
 	//将区块加入到链的存储结构中
@@ -144,6 +144,15 @@ func (bc *BlockChain) Iterate() {
 			log.Fatal(err)
 			return
 		}
+		//做区块的验证
+		   //pow对象 ,调用NewPow，把GetBlock(hash)传进去
+		pow := pow.NewPow(b)
+		if !pow.Validata(){
+			log.Fatalf("Block <%s> is not Valid.", hash)
+			continue  //表示区块非法
+		}
+        
+        	
 		//打印区块的Hash值
 		fmt.Println("HashCurr:", b.GetHashCurr())
 		//打印区块的交易列表
@@ -156,6 +165,9 @@ func (bc *BlockChain) Iterate() {
 
 	}
 }
+
+
+
 //清空命令
 func (bc *BlockChain)Clear() {
 	// 数据库中全部区块链的 key 全部删除

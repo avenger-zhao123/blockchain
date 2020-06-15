@@ -9,7 +9,7 @@ import (
 const nowVersion =0  //设置版本为0
 type Hash =string   //设置Hash类型为字符串类型
 const HashLen = 256  //设置Hash的长度为256
-const blockBits =4
+const blockBits =8
 //创建区块结构体
 type Block struct {
 	header   BlockHeader //区块头
@@ -92,7 +92,11 @@ func(b *Block) SetNonce(nonce int)*Block {
 	b.header.nonce =nonce
 	return b
 }
-// bits 属性的getter
+//获取区块的nonce
+func (b *Block) GetNonce() int {
+	return b.header.nonce
+}
+// 获取bits
 func (b *Block) GetBits() int {
 	return b.header.bits
 
