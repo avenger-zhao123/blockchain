@@ -1,6 +1,9 @@
 package block
 
 import (
+	"blockchain/tx"
+	"strings"
+
 	//"crypto/sha256"
 	"fmt"
 	"time"
@@ -13,7 +16,8 @@ const blockBits =8
 //创建区块结构体
 type Block struct {
 	header   BlockHeader //区块头
-	txs      string      //交易列表
+	//定义交易结构体后，更新交易列表类型：[]*TX 类型
+	txs      []*tx.TX    //交易列表
 	txCouner int         //交易计数器
 	hashCurr Hash        //当前区块的哈希值，算法sha256
 }
@@ -27,17 +31,18 @@ type BlockHeader struct {
 	nonce         int       //随机计数器，挖矿相关
 }
 //建立区块
-func NewBlock(prevHash Hash,txs string) *Block {
+    //在定义交易结构体后，删除交易
+func NewBlock(prevHash Hash) *Block {
 	//实例化区块，指在面向对象的编程中，通常把用类创建对象的过程称为实例化
 	b :=&Block{
 		header: BlockHeader{ //区块头
 			version:       nowVersion, //版本信息，节点更新时版本迭代
 			hashPrevBlock: prevHash,   //默克尔树根节点
 			time:          time.Now(), // 得到时间戳，nano 级别
-			bits:          blockBits,
+			bits:          blockBits,   //难度系数
 		},
-		txs: txs,      //难度系数
-		txCouner: 1,
+		//txs: txs,
+		//txCouner: 1,
 	}
 	//交易计数器
 	//b.SetHashCurr()    //当前区块的哈希值，算法sha256
@@ -71,13 +76,50 @@ func ( b*Block)SetHashCurr(hash Hash) *Block {
 	b.hashCurr =hash
 	return b
 }
+//设置区块的nonce（计数器）
+func(b *Block) SetNonce(nonce int)*Block {
+	b.header.nonce =nonce
+	return b
+}
+//设置交易
+func (b *Block)SetTX(tx *tx.TX) *Block {
+	b.txs =append(b.txs,tx)
+	b.txCouner ++
+	return b
+}
 //获取当前区块Hash
 func ( b*Block)GetHashCurr() Hash {
 	return b.hashCurr
 }
+//获取区块的nonce
+func (b *Block) GetNonce() int {
+	return b.header.nonce
+}
 //获取当前区块txs(交易列表）
-func ( b*Block)GetTxs() string {
+//func ( b*Block)GetTxs() string {
+//	return b.txs
+//}
+//定义交易结构体后，更新：获取当前区块txs(交易列表)
+func ( b*Block)GetTxs() []*tx.TX {
 	return b.txs
+}
+//为了更好的展示区块交易的信息，定义了一个新的获取交易的函数
+func (b *Block)GetTxsString() string  {
+	//将计数器以16进制的整型打印出来
+	show :=fmt.Sprintf("%d tansactions\n",b.txCouner)
+	//定义一个空的字符串切片
+	txStr :=[]string{}
+	//遍历所有的交易信息（如：hash值，输入，输出）
+	for  i,t :=range b.txs{
+		txStr =append(txStr,fmt.Sprintf("\tindex:%d, Hash: %s, Inputs: %d, Ouputs: %d",
+			i, t.Hash,len(t.Inputs),len(t.Outputs)))
+		//show +=fmt.Sprintf(" Hash: %s, Inputs: %d, Ouputs: %d",
+		//	 t.Hash,len(t.Inputs),len(t.Outputs))
+	}
+	//返回交易计数器和交易信息
+	//return show
+	return show + strings.Join(txStr, "\n")
+
 }
 //获取当前区块time（生成时间）
 func ( b*Block)GetTime() time.Time {
@@ -87,15 +129,7 @@ func ( b*Block)GetTime() time.Time {
 func ( b*Block)GetHashPrevBlock() Hash {
 	return b.header.hashPrevBlock
 }
-//设置区块的nonce（计数器）
-func(b *Block) SetNonce(nonce int)*Block {
-	b.header.nonce =nonce
-	return b
-}
-//获取区块的nonce
-func (b *Block) GetNonce() int {
-	return b.header.nonce
-}
+
 // 获取bits
 func (b *Block) GetBits() int {
 	return b.header.bits

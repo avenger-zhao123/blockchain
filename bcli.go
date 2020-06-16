@@ -23,8 +23,8 @@ func main()  {
 	defer db.Close()
 	// 初始化区块链
 	a :=baockchain.NewBlockchain(db)
-	//添加创世区块
-	a.AddGensisBlock()
+	////添加创世区块
+	//a.AddGensisBlock()
 	//声明一个变量
     var arg1 string
 	// 若用户指定了参数，则第一个用户参数为命令参数,命令至少有两个
@@ -52,7 +52,7 @@ func main()  {
 		  f :=flag.NewFlagSet("createblock",flag.ExitOnError)
 			// 在集合中，添加需要解析的 flag 标志
 			//参数的名字为"txs",参数的默认值为空，参数的帮助信息为空
-		  txs :=f.String("txs","","")
+		  address :=f.String("address","","")
 		  // 解析命令行参数,命令参数[0]是当前执行的脚本名，参数[1]是-txs
 		  f.Parse(os.Args[2:])
 		  //判断是否解析成功
@@ -61,18 +61,22 @@ func main()  {
 		  //}
 		  //fmt.Println(txs,*txs)
 		  //完成区块的创建
-		  a.AddBlock(*txs)
+		  a.AddBlock(*address)
 		  //展示全部区块
 	  case "show":
 	  	a.Iterate()
 	  case "init":
+	  	fs :=flag.NewFlagSet("init",flag.ExitOnError)
+	  	address :=fs.String("address","","")
+	  	fs.Parse(os.Args[2:])
 		  // 清空
 	  	a.Clear()
 		  // 添加创世区块
-	  	a.AddGensisBlock()
+	  	a.AddGensisBlock(*address)
 	  case "create:wallet":
 		  // 命令行标志集（参数集 -flag）
 	  	fs :=flag.NewFlagSet("create:wallet",flag.ExitOnError)
+		  // pass 标志, *string
 	  	pass :=fs.String("pass","","")
 	  	w :=wallet.NewWallet(*pass)
 	  	fmt.Printf("you mnemonic: %s\n",w.GetMnemonic())

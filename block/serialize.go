@@ -1,6 +1,7 @@
 package block
 
 import (
+	"blockchain/tx"
 	"bytes"
 	"encoding/gob"
 	"time"
@@ -17,7 +18,7 @@ type BlockData struct {
 	Time           time.Time
 	Bits           int
 	Nonce          int
-	Txs            string
+	Txs            []*tx.TX
 	TxCounter      int
 	HashCurr       Hash
 }

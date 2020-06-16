@@ -3,6 +3,8 @@ package baockchain
 import (
 	"blockchain/block"
 	"blockchain/pow"
+	"blockchain/tx"
+	"blockchain/wallet"
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -40,7 +42,7 @@ func NewBlockchain(db *leveldb.DB)*BlockChain {
 }
 //三.添加创世区块（第一个区块）
 //bc *BlockChain是方法，AddGensisBlock是函数名，*BlockChain是返回值
-func (bc *BlockChain)AddGensisBlock() *BlockChain  {
+func (bc *BlockChain)AddGensisBlock(address wallet.Address) *BlockChain  {
 
 	//校验是否可以添加创世区块
 	if bc.lastHash !="" {  //bc.lastHash已经存在，只是空的字符串，因此不能写成nil
@@ -48,13 +50,18 @@ func (bc *BlockChain)AddGensisBlock() *BlockChain  {
 		return bc
 	}
 	//数据库不存在区块，需要再添加创世区块
-	return bc.AddBlock("Gensis block")
+	return bc.AddBlock(address)
 }
 //四.添加区块到区块链上
 //bc *BlockChain是方法，AddBlock是函数名， 提供区块的数据，目前是字符串，*BlockChain是返回值
-func (bc *BlockChain) AddBlock(txs string) *BlockChain {
+func (bc *BlockChain) AddBlock(address wallet.Address  ) *BlockChain {
 	//构建区块
-	b := block.NewBlock(bc.lastHash, txs)
+	b := block.NewBlock(bc.lastHash)
+	//在定义交易结构体后,更新增加交易
+	//为区块增加交易，任何区块都有coinbase（区块奖励金）交易
+	cdtx :=tx.NewCoinbaseTX(address)
+	// 将交易加入到区块中
+	b.SetTX(cdtx)
 	//对区块做POW，工作证明
 	  //pow对象
 	p :=pow.NewPow(b)
@@ -66,6 +73,7 @@ func (bc *BlockChain) AddBlock(txs string) *BlockChain {
 	}
 	// 为区块设置nonce和hash
 	b.SetNonce(nonce).SetHashCurr(hash) //集联调用
+
 
 	//将区块加入到链的存储结构中
 	//bc.blocks[b.hashCurr] =b
@@ -156,7 +164,9 @@ func (bc *BlockChain) Iterate() {
 		//打印区块的Hash值
 		fmt.Println("HashCurr:", b.GetHashCurr())
 		//打印区块的交易列表
-		fmt.Println("Txs", b.GetTxs())
+		//fmt.Println("Txs", b.GetTxs())
+		//为了更好的展示区块交易的信息（如：hash值，输入，输出）
+		fmt.Println("Txs:",b.GetTxsString())
 		//打印节点生成时间
 		fmt.Println("Time", b.GetTime().Format(time.UnixDate))
 		//打印前一个节点的哈希值
