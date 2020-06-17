@@ -60,6 +60,7 @@ func (bc *BlockChain) AddBlock(address wallet.Address  ) *BlockChain {
 	//在定义交易结构体后,更新增加交易
 	//为区块增加交易，任何区块都有coinbase（区块奖励金）交易
 	cdtx :=tx.NewCoinbaseTX(address)
+	fmt.Println(cdtx)
 	// 将交易加入到区块中
 	b.SetTX(cdtx)
 	//对区块做POW，工作证明
@@ -143,20 +144,26 @@ func (bc *BlockChain)GetBlock(hash block.Hash)(*block.Block,error) {
 //六.迭代展示区块的方法 （方便m命令参数的调用）
 func (bc *BlockChain) Iterate() {
 	//通过for循环遍历出当前区块
-	for hash :=bc.lastHash;hash !=""; {
-		//b作为blocks的下标
-		//b :=bc.blocks[hash]
-		//得到区块  GetBlock是上面的函数，这块调用
-		b,err :=bc.GetBlock(hash)
-		if err!=nil {
-			log.Fatal(err)
-			return
-		}
+	//for hash :=bc.lastHash;hash !=""; {
+	//	//b作为blocks的下标
+	//	//b :=bc.blocks[hash]
+	//	//得到区块  GetBlock是上面的函数，这块调用
+	//	b,err :=bc.GetBlock(hash)
+	//	if err!=nil {
+	//		log.Fatal(err)
+	//		return
+	//	}
+
+	//在学完UTXO后更新迭代展示区块的方法
+	   // 构建迭代器
+	bci :=NewBCIterator(bc)
+	  //通过for循环遍历出当前区块
+	for b,err :=bci.Next();err ==nil; b,err =bci.Next(){
 		//做区块的验证
 		   //pow对象 ,调用NewPow，把GetBlock(hash)传进去
 		pow := pow.NewPow(b)
 		if !pow.Validata(){
-			log.Fatalf("Block <%s> is not Valid.", hash)
+			log.Fatalf("Block <%s> is not Valid.",b.GetHashCurr())
 			continue  //表示区块非法
 		}
         
@@ -171,7 +178,7 @@ func (bc *BlockChain) Iterate() {
 		fmt.Println("Time", b.GetTime().Format(time.UnixDate))
 		//打印前一个节点的哈希值
 		fmt.Println("HashPrev",b.GetHashPrevBlock())
-		hash =b.GetHashPrevBlock()
+		//hash =b.GetHashPrevBlock()
 
 	}
 }

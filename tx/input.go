@@ -7,5 +7,5 @@ type Input struct {
 	HahSrcTX string
 	// 输入来源交易输出的索引
 	//来源交易输出的索引(B的钱是A给的，A可能不止给B发钱，需要确定B从A得到的是哪一部份钱）
-	IndexSrcOutput string
+	IndexSrcOutput int
 }

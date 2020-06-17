@@ -52,17 +52,18 @@ func NewCoinbaseTX(to wallet.Address) *TX  {
 		Value:CoinbaseSubidy,
 	    To:   to,
 	}
+
 	//将定义好的输出放到挖矿奖励交易的输出中
 	outs :=[]*Output{
 		output,
 	}
+
    return NewTX(ins,outs)
 	
 }
 //设置哈希
 func (tx *TX)SetHash() *TX {
 	//先系列化
-
 	ser ,err := SerializeTX(*tx)
 	if err !=nil {
 		log.Fatal(err)

@@ -45,11 +45,11 @@ func main()  {
 	  	     //>go run bcli.go createblock -txs="A send 1 to B"
 	  	//我们选择性实现，增加通用性，使用 -txs 的模式。（有-txs后面可以有好几个参数，没有就只能跟一个参数
 	  	//完成对 -txs 命令行标志 flag 的解析，解析 flag go 提供了flag包完成
-	  	case "createblock":
+	  	case "create:block":
 		  // 为 createblock 命令增加一个 flag 集合。标志集合
 		  //flag为“-txs"的参数，flag 集合就是多个“-txs"的参数
 		  //下面参数1为flag 集合的名字，与选择名字一样，易于识别
-		  f :=flag.NewFlagSet("createblock",flag.ExitOnError)
+		  f :=flag.NewFlagSet("create:block",flag.ExitOnError)
 			// 在集合中，添加需要解析的 flag 标志
 			//参数的名字为"txs",参数的默认值为空，参数的帮助信息为空
 		  address :=f.String("address","","")
@@ -81,6 +81,15 @@ func main()  {
 	  	w :=wallet.NewWallet(*pass)
 	  	fmt.Printf("you mnemonic: %s\n",w.GetMnemonic())
 	  	fmt.Printf("you address: %s \n",w.Address)
+	  case "balance":
+	  	fs :=flag.NewFlagSet("balance",flag.ExitOnError)
+	  	address :=fs.String("address","","")
+	  	fs.Parse(os.Args[2:])
+
+	  	fmt.Printf("Address:%s\nBalance:%d\n",
+	  		*address,a.GetBalance(*address),
+	  		)
+
 
 
 	  case "help":
@@ -95,7 +104,8 @@ func Usage()  {
 	fmt.Println("Usage:")
 	fmt.Printf("\t%s\t%s\n", "bcli create:block -txs=<txs>", "create block on blockchain.")
 	fmt.Printf("\t%s\t%s\n", "bcli create:wallet -pass=<pass>", "create wallet base on pass.")
-	fmt.Printf("\t%s\t\t\t%s\n", "bcli init", "initial blockchain")
+	fmt.Printf("\t%s\t%s\n", "bcli init -address=<address>", "initial blockchain")
+	fmt.Printf("\t%s\t%s\n", "bcli balance -address=<address>", "get address 's balance")
 	fmt.Printf("\t%s\t\t\t%s\n", "bcli help", "help info for bcli")
 	fmt.Printf("\t%s\t\t\t%s\n", "bcli show", "show blocks in chain.")
 
