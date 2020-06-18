@@ -23,10 +23,14 @@ func SerializeTX(tx TX) ([]byte,error)  {
 //反序列化（反穿行化，解码）(与区块的反序列化函数基本一致）
 func UnserializaTX(data []byte)(TX,error)  {
      buffer :=bytes.Buffer{}
+	//将之前的编码数据，放入缓存中
      dec :=gob.NewDecoder(&buffer)
+	//建立解码器
      buffer.Write(data)
+	//解码时需要提供解码的数据类型
      tx :=TX{}
-     err :=dec.Decode(&tx);
+	//解码数据(反序列化）
+     err :=dec.Decode(&tx)
      if err !=nil {
 		 return tx, err
 	 }

@@ -18,8 +18,11 @@ type BlockChain struct {
 	//了解leveldb数据库之后，更新内容
 	db *leveldb.DB   //leveldb的数据库连接
 	//blocks map[Hash]*Block  //全部区块信息，由区块哈希作为key来检索
+
+	//在建立UTXO结构体时，更新区块链结构体
+	UTXOCache *UTXOCache
 }
-//二.建立区块链
+//二.区块链结构体赋值（值可能不为具体的数值）
   //了解leveldb数据库之后，更新内容:给NewBlockchain传递”db leveldb.DB“的参数
 func NewBlockchain(db *leveldb.DB)*BlockChain {
 	//实例化区块，指在面向对象的编程中，通常把用类创建对象的过程称为实例化
@@ -27,6 +30,9 @@ func NewBlockchain(db *leveldb.DB)*BlockChain {
 		//blocks : map[Hash]*Block{},  //全部区块信息，由区块哈希作为key来检索
 		//了解leveldb数据库之后，更新内容
 		db: db,
+
+		///在建立UTXO结构体时，增加UTXOCache
+		UTXOCache: NewUTXOCache(db),
 
 	}
 	//了解leveldb数据库之后，更新内容：读取存在于数据库的最后区块的哈希值
@@ -60,9 +66,13 @@ func (bc *BlockChain) AddBlock(address wallet.Address  ) *BlockChain {
 	//在定义交易结构体后,更新增加交易
 	//为区块增加交易，任何区块都有coinbase（区块奖励金）交易
 	cdtx :=tx.NewCoinbaseTX(address)
-	fmt.Println(cdtx)
 	// 将交易加入到区块中
 	b.SetTX(cdtx)
+//在定义完UTXO结构体后，更新：将新增的交易加入缓存中
+	bc.UTXOCache.UpdateUTXO(cdtx)
+
+
+
 	//对区块做POW，工作证明
 	  //pow对象
 	p :=pow.NewPow(b)
@@ -190,10 +200,15 @@ func (bc *BlockChain)Clear() {
 	// 数据库中全部区块链的 key 全部删除
 	bc.db.Delete([]byte("lastHash"),nil)
 	// 迭代删除，全部的 b_ 的key
-	//until是leveldb中的，通过 b_ key迭代出全部的key
+	//util是leveldb中的，通过b_ key迭代出全部的key
     iter :=bc.db.NewIterator(util.BytesPrefix([]byte("b_")),nil)
     for iter.Next() {
     	bc.db.Delete(iter.Key(),nil)
+	}
+	//建立好UTXO缓存后，更新：删除UTXO缓存的数据
+	iter =bc.db.NewIterator(util.BytesPrefix([]byte("t_")),nil)
+	for iter.Next() {
+		bc.db.Delete(iter.Key(),nil)
 	}
 	iter.Release()
     //清空bc对象

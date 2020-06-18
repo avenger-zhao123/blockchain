@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"log"
+	"time"
 )
 
 // 挖矿奖励金
@@ -26,6 +27,9 @@ type TX struct {
 	Outputs []*Output
 	//本次交易hash运算的值
 	Hash string
+	//交易时间
+	//增加该字段的当前的目的，是为了让相同address的Coinbase交易存在不同部分
+	Time time.Time
 
 }
 
@@ -36,9 +40,11 @@ func NewTX(ins []*Input,outs []*Output)*TX  {
 	tx :=&TX{
 		Inputs: ins,
 		Outputs: outs,
+		Time: time.Now(),
 	}
 	//调用建立好的交易哈希函数
 	tx.SetHash()
+
 	return tx
 }
 
