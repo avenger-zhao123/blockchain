@@ -28,13 +28,14 @@ type UTXOCache struct {
 }
 //UTXO 缓存操作对象赋上leveldb数据库
 func NewUTXOCache(db *leveldb.DB) *UTXOCache  {
-	return &UTXOCache{
+	t :=&UTXOCache{
 		db :db,
 	}
+	return t
 }
 //建立UTXO的缓存
 func (uc *UTXOCache)UpdateUTXO(tx *tx.TX) *UTXOCache {
-	//在 UTXO 缓存中，加入新增的 UTXO
+	//一.在 UTXO 缓存中，加入新增的 UTXO
 	//步骤为:
 	//1.遍历tx交易全部的输出，每个输出作为一个新的UTXO缓存来使用即可
 	//(1)定义UTXO的集合，以便之后将UTX放进去
@@ -57,7 +58,60 @@ func (uc *UTXOCache)UpdateUTXO(tx *tx.TX) *UTXOCache {
 	}
 	  //(2)设置（创建，更新）key（leveldb是key-value型数据库）
 	      //key-""t_"+tx.Hash";数值-“ser”，选项-“nil"
-	uc.db.Put([]byte("t_"+tx.Hash),ser,nil)
+	err =uc.db.Put([]byte("t_"+tx.Hash),ser,nil)
+	if err !=nil{
+		log.Fatal(err)
+	}
+    //二.删除已经使用的UTXO
+      //1.遍历输入
+    for _,in :=range tx.Inputs{
+		// 基于 in.HashSrcTx 找到 utxo 数据库中，使用的UTXO
+    	date ,err :=uc.db.Get([]byte("t_"+in.HashSrcTX),nil)
+    	if err !=nil{
+    		log.Println(err)
+    		return uc
+		}
+		//反序列化
+		utxos,err :=UnSerializeUTXOSet(date)
+		if err !=nil{
+			log.Println(err)
+			return uc
+		}
+		// 更新该key交易对应的utxo集合
+		newUtxs :=UTXOSet{}   //将UTXO集合为空集合
+		for _,utxo :=range utxos{    //遍历反序列化已经使用的UTXO
+			if utxo.IndexStrOutput ==in.IndexSrcOutput{   //判断使用的UTXO中的输出索引是否是输入中的输出索引（是否有找零）
+				//newUtxs =append(newUtxs,utxo)
+				uc.db.Delete([]byte("t_"+in.HashSrcTX),nil)  //删除其中是输入中的索引输出
+			}else {
+				newUtxs =append(newUtxs,utxo)      // 未使用的 utxo 再保存起来
+				if len(newUtxs) ==0 {              // 该交易只有一个UTXO，恰好被使用了，那么该交易为key的存储，就可以删除了
+					uc.db.Delete([]byte("t_"+in.HashSrcTX),nil)
+				}else {
+					ser,err :=SerializeUTXOSet(newUtxs)    //该交易存在多个UTXO，仅仅使用某个，将剩余的存起来
+					if err !=nil {
+						log.Println("UTXOSet Serialize failed")
+						return uc
+					}
+					uc.db.Put([]byte("t_"+in.HashSrcTX),ser,nil)  //重新设置"key"
+				}
+			}
+
+		}
+	//	if len(newUtxs) ==0 {
+	//		uc.db.Delete([]byte("t_"+in.HashSrcTX),nil)
+	//	}else {
+	//		ser,err :=SerializeUTXOSet(newUtxs)
+	//		if err !=nil {
+	//			log.Println("UTXOSet Serialize failed")
+	//			return uc
+	//		}
+	//		uc.db.Put([]byte("t_"+in.HashSrcTX),ser,nil)
+	//	}
+	//
+	}
+
+
    return uc
 }
 
@@ -88,6 +142,7 @@ func(uc *UTXOCache) FindUTXO(address wallet.Address)[]*UTXO {
 			}
 		}
 	}
+	//释放掉迭代器
     iter.Release()
     return utxo
 }

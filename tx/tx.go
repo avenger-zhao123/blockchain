@@ -47,7 +47,6 @@ func NewTX(ins []*Input,outs []*Output)*TX  {
 
 	return tx
 }
-
 //构造挖矿奖励CoinBase交易
 func NewCoinbaseTX(to wallet.Address) *TX  {
 	//输入,空的（挖矿奖励只有输出，没有输入）
@@ -56,7 +55,7 @@ func NewCoinbaseTX(to wallet.Address) *TX  {
 	output :=&Output{
 		// 常量，存储挖矿奖励金
 		Value:CoinbaseSubidy,
-	    To:   to,
+		To:   to,
 	}
 
 	//将定义好的输出放到挖矿奖励交易的输出中
@@ -64,9 +63,15 @@ func NewCoinbaseTX(to wallet.Address) *TX  {
 		output,
 	}
 
-   return NewTX(ins,outs)
-	
+	return NewTX(ins,outs)
+
 }
+//构造转账交易
+func NewTransferTX(inputs []*Input,outputs []*Output) *TX  {
+	return NewTX(inputs,outputs)
+}
+
+
 //设置哈希
 func (tx *TX)SetHash() *TX {
 	//先系列化

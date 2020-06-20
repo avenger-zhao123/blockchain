@@ -2,6 +2,7 @@ package main
 
 import (
 	"blockchain/baockchain"
+	"blockchain/tx"
 	"blockchain/wallet"
 	"flag"
 	"fmt"
@@ -45,7 +46,7 @@ func main()  {
 	  	     //>go run bcli.go createblock -txs="A send 1 to B"
 	  	//我们选择性实现，增加通用性，使用 -txs 的模式。（有-txs后面可以有好几个参数，没有就只能跟一个参数
 	  	//完成对 -txs 命令行标志 flag 的解析，解析 flag go 提供了flag包完成
-	  	case "create:block":
+	  case "create:block":
 		  // 为 createblock 命令增加一个 flag 集合。标志集合
 		  //flag为“-txs"的参数，flag 集合就是多个“-txs"的参数
 		  //下面参数1为flag 集合的名字，与选择名字一样，易于识别
@@ -68,11 +69,18 @@ func main()  {
 	  case "init":
 	  	fs :=flag.NewFlagSet("init",flag.ExitOnError)
 	  	address :=fs.String("address","","")
+
 	  	fs.Parse(os.Args[2:])
-		  // 清空
-	  	a.Clear()
-		  // 添加创世区块
-	  	a.AddGensisBlock(*address)
+	  	if fs.Parsed(){
+			// 清空
+			a.Clear()
+			// 添加创世区块
+			if *address == ""{
+				log.Println("Please set address by flag -address")
+			}else {
+				a.AddGensisBlock(*address)
+			}
+		}
 	  case "create:wallet":
 		  // 命令行标志集（参数集 -flag）
 	  	fs :=flag.NewFlagSet("create:wallet",flag.ExitOnError)
@@ -89,9 +97,24 @@ func main()  {
 	  	fmt.Printf("Address:%s\nBalance:%d\n",
 	  		*address,a.GetBalance(*address),
 	  		)
-
-
-
+	  case "send":
+		  // 命令行标志集（参数集 -flag）
+	  	fs :=flag.NewFlagSet("send",flag.ExitOnError)
+		  // from、to、value 标志, *string
+	  	from :=fs.String("from","","use from")
+	  	to :=fs.String("to","","use to")
+	  	value :=fs.Int("value",0,"value")
+		  // 解析命令行参数,命令参数[0]是当前执行的脚本名，参数[1]是-from、-to、-value
+	  	fs.Parse(os.Args[2:])
+		  // parsed() 解析成功
+	  	if fs.Parsed(){
+	  		err :=a.Transfer(*from,*to,*value*tx.BTC)
+	  		if err ==nil{
+	  			fmt.Println("Send Success! waiting for block packed.")
+			}else{
+				fmt.Println(err)
+			}
+		}
 	  case "help":
 		  fallthrough  //贯穿
 	  default:   //预设
@@ -102,11 +125,12 @@ func Usage()  {
 	fmt.Println("bcli is a tool for Blockchain.")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Printf("\t%s\t%s\n", "bcli create:block -txs=<txs>", "create block on blockchain.")
-	fmt.Printf("\t%s\t%s\n", "bcli create:wallet -pass=<pass>", "create wallet base on pass.")
-	fmt.Printf("\t%s\t%s\n", "bcli init -address=<address>", "initial blockchain")
-	fmt.Printf("\t%s\t%s\n", "bcli balance -address=<address>", "get address 's balance")
-	fmt.Printf("\t%s\t\t\t%s\n", "bcli help", "help info for bcli")
-	fmt.Printf("\t%s\t\t\t%s\n", "bcli show", "show blocks in chain.")
+	fmt.Printf("\t%s\t\t\t%s\n", "bcli create:block -txs=<txs>", "create block on blockchain.")
+	fmt.Printf("\t%s\t\t\t%s\n", "bcli create:wallet -pass=<pass>", "create wallet base on pass.")
+	fmt.Printf("\t%s\t\t\t%s\n", "bcli init -address=<address>", "initial blockchain")
+	fmt.Printf("\t%s\t%s\n", "bcli send -from=<from> -to=<to> -value=<value>", "send address to another-address")
+	fmt.Printf("\t%s\t\t\t%s\n", "bcli balance -address=<address>", "get address 's balance")
+	fmt.Printf("\t%s\t\t\t\t\t%s\n", "bcli help", "help info for bcli")
+	fmt.Printf("\t%s\t\t\t\t\t%s\n", "bcli show", "show blocks in chain.")
 
 }

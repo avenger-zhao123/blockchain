@@ -70,7 +70,32 @@ func (bc *BlockChain) AddBlock(address wallet.Address  ) *BlockChain {
 	b.SetTX(cdtx)
 //在定义完UTXO结构体后，更新：将新增的交易加入缓存中
 	bc.UTXOCache.UpdateUTXO(cdtx)
-
+//在定义完转账交易时，更新：将转账交易加入区块中
+    bc.TxsInit()
+	//假设每个区块仅仅可以存储3个交易，去掉CoinBase交易，此处从交易缓存中，获取2个交易。
+	//实操时，通过交易size在控制的。一个区块为1M，一笔交易大约 250Byte，装满为止。
+	for i,l :=0,len(Txs);i<l&&i<2;i++{
+		//从交易缓存中，获取交易
+		t :=Txs[0]      //让“coinbase（区块奖励金）交易“在交易缓存的最开始
+		if len(Txs)>1{   //判断是否有除了“coinbase（区块奖励金）交易”之外的交易
+			Txs =Txs[1:] //有就从新定义交易缓存
+		}
+		// 将交易加入到区块中
+		b.SetTX(t)
+		// 更新交易对应的 UTXO
+		bc.UTXOCache.UpdateUTXO(t)
+	}
+	bc.TxsSave()
+//构造完默克尔树后，更新：添加默克尔树
+	// 交易添加完毕，区块已经存储了全部的交易，将全部交易数据提取，构建默克尔树
+	merkledata :=[][]byte{}   //定义交易的hash值集合
+	for _,t :=range b.GetTxs() {  //遍历所获得交易
+		merkledata =append(merkledata,[]byte(t.Hash))  //将获得的交易的hash值加入定义好的集合中
+	}
+	//调用” 构建默克尔树“函数，将获得交易的hash值传进去
+	mt :=block.NewMerleTree(merkledata)
+	// 将默克尔树的根节点，放入区块头中
+    b.GetHashMerkRoot(mt.Root.Hash)
 
 
 	//对区块做POW，工作证明
@@ -210,6 +235,9 @@ func (bc *BlockChain)Clear() {
 	for iter.Next() {
 		bc.db.Delete(iter.Key(),nil)
 	}
+	//j建立好Trabsfer缓存，更新：删除Trabsfer缓存的数据
+	bc.db.Delete([]byte("txs"),nil)
+	//释放迭代器
 	iter.Release()
     //清空bc对象
     bc.lastHash =""

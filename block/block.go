@@ -135,6 +135,11 @@ func (b *Block) GetBits() int {
 	return b.header.bits
 
 }
+//获取默克尔树节点
+func(b*Block) GetHashMerkRoot(hash Hash)*Block  {
+	b.header.hashMerkRoot =hash
+	return b
+}
 // 生成用于 POW（hashCash）的服务字符串
 func  (b *Block) GenServiceStr() string {
 	return fmt.Sprintf("%d%s%s%d%s", //返回格式化输出
